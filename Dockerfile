@@ -1,9 +1,8 @@
 # clean base image containing only comfyui, comfy-cli and comfyui-manager
 FROM runpod/worker-comfyui:5.5.1-base
 
-# Update ComfyUI to latest version (base image ships 0.3.68 from 2025-11-04
-# which does not support Z-Image Qwen CLIP type; newer versions do)
-RUN cd /comfyui && git fetch origin && git checkout master && git pull origin master
+# NOTE: Do NOT update ComfyUI here - latest master crashes with pinned custom node versions.
+# Base image ships ComfyUI 0.3.68 (2025-11-04). Z-Image Qwen CLIP support needs investigation.
 
 # install custom nodes into comfyui (first node with --mode remote to fetch updated cache)
 RUN comfy node install --exit-on-fail seedvr2_videoupscaler@2.5.24 --mode remote
@@ -31,7 +30,8 @@ RUN cd /comfyui/custom_nodes && git clone https://github.com/Suzie1/ComfyUI_Comf
 RUN printf '\nnetwork_volume_root:\n    base_path: /runpod-volume/models\n    checkpoints: .\n    diffusion_models: .\n    clip: .\n    unet: .\n    vae: .\n    ultralytics: ultralytics\n\nnetwork_volume_loras_bbox:\n    base_path: /runpod-volume/models/loras\n    ultralytics: .\n\nnetwork_volume_comfyui_models:\n    base_path: /runpod-volume/ComfyUI/models\n    ultralytics: ultralytics\n\nnetwork_volume_slim_models:\n    base_path: /runpod-volume/runpod-slim/ComfyUI/models\n    ultralytics: ultralytics\n' >> /comfyui/extra_model_paths.yaml
 
 # download models into comfyui
-RUN comfy model download --url https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors --relative-path models/vae --filename ae.safetensors
+# ae.safetensors requires HF auth (FLUX.1-schnell is gated) - rely on network volume copy
+# RUN comfy model download --url https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors --relative-path models/vae --filename ae.safetensors
 RUN comfy model download --url https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth --relative-path models/sams --filename sam_vit_b_01ec64.pth
 RUN comfy model download --url https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8n.pt --relative-path models/ultralytics/bbox --filename face_yolov8n.pt
 RUN comfy model download --url https://huggingface.co/numz/SeedVR2_comfyUI/resolve/main/ema_vae_fp16.safetensors --relative-path models/vae --filename ema_vae_fp16.safetensors
