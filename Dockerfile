@@ -1,0 +1,31 @@
+# clean base image containing only comfyui, comfy-cli and comfyui-manager
+FROM runpod/worker-comfyui:5.5.1-base
+
+# install custom nodes into comfyui (first node with --mode remote to fetch updated cache)
+RUN comfy node install --exit-on-fail seedvr2_videoupscaler@2.5.24 --mode remote
+RUN comfy node install --exit-on-fail was-node-suite-comfyui@1.0.2
+RUN comfy node install --exit-on-fail comfyui-kjnodes@1.2.9
+RUN comfy node install --exit-on-fail seedvarianceenhancer@2.2.0
+RUN comfy node install --exit-on-fail comfyui-impact-subpack@1.3.5
+RUN comfy node install --exit-on-fail comfyui-impact-pack@8.28.2
+RUN comfy node install --exit-on-fail rgthree-comfy@1.0.2512112053
+RUN comfy node install --exit-on-fail comfyui-image-saver@1.21.0
+RUN comfy node install --exit-on-fail comfyui-easy-use@1.3.6
+RUN comfy node install --exit-on-fail efficiency-nodes-comfyui@1.0.8
+# The following custom node groups were listed but could not be resolved via the ComfyUI registry or have no aux_id (GitHub repo) provided:
+# - unknown_registry: Fast Groups Bypasser (rgthree), Reroute (no aux_id provided; skipped)
+# - chibi (registryStatus=false; no aux_id provided; skipped)
+# - comfyroll (registryStatus=false; no aux_id provided; skipped)
+
+# download models into comfyui
+RUN comfy model download --url https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors --relative-path models/vae --filename ae.safetensors
+RUN comfy model download --url https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth --relative-path models/sams --filename sam_vit_b_01ec64.pth
+RUN comfy model download --url https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8n.pt --relative-path models/ultralytics/bbox --filename face_yolov8n.pt
+RUN comfy model download --url https://huggingface.co/numz/SeedVR2_comfyUI/resolve/main/ema_vae_fp16.safetensors --relative-path models/vae --filename ema_vae_fp16.safetensors
+# RUN # Could not find URL for ZIT\2601\2601_NSFW_ZIT_BSY_bf16.safetensors
+# RUN # Could not find URL for ZIT\qwen_3_4b.safetensors
+# RUN # Could not find URL for seedvr2_ema_7b_sharp_fp8_e4m3fn_mixed_block35_fp16.safetensors
+# RUN # Could not find URL for bbox/Eyes.pt
+
+# copy all input data (like images or videos) into comfyui (uncomment and adjust if needed)
+# COPY input/ /comfyui/input/
