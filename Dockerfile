@@ -1,8 +1,12 @@
 # clean base image containing only comfyui, comfy-cli and comfyui-manager
 FROM runpod/worker-comfyui:5.5.1-base
 
-# NOTE: Do NOT update ComfyUI here - latest master crashes with pinned custom node versions.
-# Base image ships ComfyUI 0.3.68 (2025-11-04). Z-Image Qwen CLIP support needs investigation.
+# Update ComfyUI from 0.3.68 to v0.11.0 for Z-Image/Qwen3 CLIP support
+# v0.11.0 adds: zimage omni (#11979), Qwen3 config (#11998), regular z-image (#11985)
+# NOTE: Do NOT use 'git pull origin master' - latest crashes with pinned custom nodes.
+RUN cd /comfyui && git remote set-url origin https://github.com/Comfy-Org/ComfyUI.git && \
+    git fetch origin --tags && git checkout v0.11.0 && \
+    pip install -r requirements.txt
 
 # install custom nodes into comfyui (first node with --mode remote to fetch updated cache)
 RUN comfy node install --exit-on-fail seedvr2_videoupscaler@2.5.24 --mode remote
@@ -28,6 +32,14 @@ RUN cd /comfyui/custom_nodes && git clone https://github.com/Suzie1/ComfyUI_Comf
 # and ZIT checkpoints at /runpod-volume/models/ZIT/ - both under the ROOT, not under subdirs.
 # This yaml adds the root as an additional search path so those models are found.
 RUN printf '\nnetwork_volume_root:\n    base_path: /runpod-volume/models\n    checkpoints: .\n    diffusion_models: .\n    clip: .\n    unet: .\n    vae: .\n    ultralytics: ultralytics\n\nnetwork_volume_loras_bbox:\n    base_path: /runpod-volume/models/loras\n    ultralytics: .\n\nnetwork_volume_comfyui_models:\n    base_path: /runpod-volume/ComfyUI/models\n    ultralytics: ultralytics\n\nnetwork_volume_slim_models:\n    base_path: /runpod-volume/runpod-slim/ComfyUI/models\n    ultralytics: ultralytics\n' >> /comfyui/extra_model_paths.yaml
+
+# Fix Eyes.pt: Impact Pack only scans /comfyui/models/ultralytics/bbox (ignores extra_model_paths)
+# Create symlink to network volume location (resolves at runtime when volume is mounted)
+RUN ln -sf /runpod-volume/models/ultralytics/bbox/Eyes.pt /comfyui/models/ultralytics/bbox/Eyes.pt
+
+# Add Eyes.pt to Impact Subpack whitelist for safe .pt file loading
+RUN mkdir -p /comfyui/user/default/ComfyUI-Impact-Subpack && \
+    echo "Eyes.pt" > /comfyui/user/default/ComfyUI-Impact-Subpack/model-whitelist.txt
 
 # download models into comfyui
 # ae.safetensors requires HF auth (FLUX.1-schnell is gated) - rely on network volume copy
