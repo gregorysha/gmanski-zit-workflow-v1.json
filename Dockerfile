@@ -18,6 +18,14 @@ RUN comfy node install --exit-on-fail efficiency-nodes-comfyui@1.0.8
 # - comfyroll (registryStatus=false; no aux_id provided; skipped)
 RUN cd /comfyui/custom_nodes && git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git
 
+# Add extra model search paths for network volume root directory
+# The old endpoint symlinked ALL model types (clip, unet, diffusion_models, checkpoints)
+# to the root /runpod-volume/models/ directory. The new worker only searches type-specific
+# subdirs (e.g. /runpod-volume/models/clip). Z-Image models live at /runpod-volume/models/z_image/
+# and ZIT checkpoints at /runpod-volume/models/ZIT/ - both under the ROOT, not under subdirs.
+# This yaml adds the root as an additional search path so those models are found.
+RUN printf '\nnetwork_volume_root:\n    base_path: /runpod-volume/models\n    checkpoints: .\n    diffusion_models: .\n    clip: .\n    unet: .\n    vae: .\n    ultralytics: ultralytics\n' >> /comfyui/extra_model_paths.yaml
+
 # download models into comfyui
 RUN comfy model download --url https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors --relative-path models/vae --filename ae.safetensors
 RUN comfy model download --url https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth --relative-path models/sams --filename sam_vit_b_01ec64.pth
