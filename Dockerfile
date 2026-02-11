@@ -1,6 +1,10 @@
 # clean base image containing only comfyui, comfy-cli and comfyui-manager
 FROM runpod/worker-comfyui:5.5.1-base
 
+# Update ComfyUI to latest version (base image ships 0.3.68 from 2025-11-04
+# which does not support Z-Image Qwen CLIP type; newer versions do)
+RUN cd /comfyui && git fetch origin && git checkout master && git pull origin master
+
 # install custom nodes into comfyui (first node with --mode remote to fetch updated cache)
 RUN comfy node install --exit-on-fail seedvr2_videoupscaler@2.5.24 --mode remote
 RUN comfy node install --exit-on-fail was-node-suite-comfyui@1.0.2
@@ -24,7 +28,7 @@ RUN cd /comfyui/custom_nodes && git clone https://github.com/Suzie1/ComfyUI_Comf
 # subdirs (e.g. /runpod-volume/models/clip). Z-Image models live at /runpod-volume/models/z_image/
 # and ZIT checkpoints at /runpod-volume/models/ZIT/ - both under the ROOT, not under subdirs.
 # This yaml adds the root as an additional search path so those models are found.
-RUN printf '\nnetwork_volume_root:\n    base_path: /runpod-volume/models\n    checkpoints: .\n    diffusion_models: .\n    clip: .\n    unet: .\n    vae: .\n    ultralytics: ultralytics\n' >> /comfyui/extra_model_paths.yaml
+RUN printf '\nnetwork_volume_root:\n    base_path: /runpod-volume/models\n    checkpoints: .\n    diffusion_models: .\n    clip: .\n    unet: .\n    vae: .\n    ultralytics: ultralytics\n\nnetwork_volume_loras_bbox:\n    base_path: /runpod-volume/models/loras\n    ultralytics: .\n\nnetwork_volume_comfyui_models:\n    base_path: /runpod-volume/ComfyUI/models\n    ultralytics: ultralytics\n\nnetwork_volume_slim_models:\n    base_path: /runpod-volume/runpod-slim/ComfyUI/models\n    ultralytics: ultralytics\n' >> /comfyui/extra_model_paths.yaml
 
 # download models into comfyui
 RUN comfy model download --url https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors --relative-path models/vae --filename ae.safetensors
