@@ -16,6 +16,7 @@ RUN comfy node install --exit-on-fail efficiency-nodes-comfyui@1.0.8
 # - unknown_registry: Fast Groups Bypasser (rgthree), Reroute (no aux_id provided; skipped)
 # - chibi (registryStatus=false; no aux_id provided; skipped)
 # - comfyroll (registryStatus=false; no aux_id provided; skipped)
+RUN cd /comfyui/custom_nodes && git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git
 
 # download models into comfyui
 RUN comfy model download --url https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors --relative-path models/vae --filename ae.safetensors
