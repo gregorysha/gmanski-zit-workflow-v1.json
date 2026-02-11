@@ -9,7 +9,7 @@ RUN cd /comfyui && git remote set-url origin https://github.com/Comfy-Org/ComfyU
     pip install -r requirements.txt && \
     pip install --upgrade comfy-cli && \
     comfy --skip-prompt set-default /comfyui && \
-    pip install git+https://github.com/thu-ml/SageAttention.git
+    pip install --no-build-isolation git+https://github.com/thu-ml/SageAttention.git
 
 # install custom nodes into comfyui (first node with --mode remote to fetch updated cache)
 RUN comfy node install --exit-on-fail seedvr2_videoupscaler@2.5.24 --mode remote
