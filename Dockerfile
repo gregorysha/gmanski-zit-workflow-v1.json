@@ -9,12 +9,17 @@ RUN cd /comfyui && git remote set-url origin https://github.com/Comfy-Org/ComfyU
     pip install -r requirements.txt && \
     pip install --upgrade comfy-cli && \
     comfy --skip-prompt set-default /comfyui && \
-    pip install --no-build-isolation git+https://github.com/thu-ml/SageAttention.git
+    pip install sageattention==1.0.6
 
 # install custom nodes into comfyui (first node with --mode remote to fetch updated cache)
 RUN comfy node install --exit-on-fail seedvr2_videoupscaler@2.5.24 --mode remote
 RUN comfy node install --exit-on-fail was-node-suite-comfyui@1.0.2
 RUN comfy node install --exit-on-fail comfyui-kjnodes@1.2.9
+
+# Patch KJNodes to fall back from CUDA/Triton kernels to basic sageattn
+# (PyPI sageattention 1.0.6 only has sageattn; CUDA int8 kernels need nvcc to build from source)
+COPY patch_kjnodes_sage.py /tmp/patch_kjnodes_sage.py
+RUN python /tmp/patch_kjnodes_sage.py
 RUN comfy node install --exit-on-fail seedvarianceenhancer@2.2.0
 RUN comfy node install --exit-on-fail comfyui-impact-subpack@1.3.5
 RUN comfy node install --exit-on-fail comfyui-impact-pack@8.28.2
