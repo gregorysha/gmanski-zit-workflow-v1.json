@@ -8,8 +8,20 @@ This patch wraps each conditional import with try/except to fall back to sageatt
 """
 
 import re
+import glob
+import sys
 
-f = '/comfyui/custom_nodes/ComfyUI-KJNodes/nodes/model_optimization_nodes.py'
+# Find the file dynamically - directory name varies by install method
+candidates = glob.glob('/comfyui/custom_nodes/*/nodes/model_optimization_nodes.py')
+if not candidates:
+    # Try alternate layout (flat structure)
+    candidates = glob.glob('/comfyui/custom_nodes/*/model_optimization_nodes.py')
+if not candidates:
+    print('WARNING: model_optimization_nodes.py not found in any custom node - skipping patch')
+    sys.exit(0)
+
+f = candidates[0]
+print(f'Found KJNodes file: {f}')
 c = open(f).read()
 
 # The imports in KJNodes are INSIDE the get_sage_func function like:
