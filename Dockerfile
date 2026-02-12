@@ -1,8 +1,9 @@
 # clean base image containing only comfyui, comfy-cli and comfyui-manager
 FROM runpod/worker-comfyui:5.5.1-base
 
-# Install gcc - required by Triton JIT compiler at runtime (used by sageattention)
-RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
+# Install gcc + libc6-dev - required by Triton JIT compiler at runtime (used by sageattention)
+# gcc alone is not enough: Triton's cuda.h includes <stdlib.h> which lives in libc6-dev
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev && rm -rf /var/lib/apt/lists/*
 
 # Update ComfyUI from 0.3.68 to v0.11.0 for Z-Image/Qwen3 CLIP support
 # v0.11.0 adds: zimage omni (#11979), Qwen3 config (#11998), regular z-image (#11985)
